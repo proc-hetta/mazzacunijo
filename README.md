@@ -10,15 +10,15 @@ their Telegram ID, so they can ask to be added.
 | ------------------------- | --------------------------------------------------------------------------- |
 | `MAZZACUNIJO_BOT_TOKEN`   | Token from [@BotFather](https://t.me/BotFather)                              |
 | `MAZZACUNIJO_ALLOWED_IDS` | Comma-separated Telegram user IDs, e.g. `123456789,987654321`               |
-| `MAZZACUNIJO_MACHINES`    | JSON list of `{"name", "mac", "ip"}` objects, unique names up to 64 bytes   |
+| `MAZZACUNIJO_SSH_HOST`    | Public host used in the SSH command, e.g. `example.org`                     |
+| `MAZZACUNIJO_MACHINES`    | JSON list of `{"name", "mac", "ip", "username"}` objects, unique names up to 64 bytes |
 | `MAZZACUNIJO_LOG`         | Optional [log filter](https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html), defaults to `info` |
 
-`ip` is where the magic packet is sent. This is usually the subnet broadcast address
-(e.g. `192.168.1.255`). A machine's own IP only works if the sender's ARP cache still
-has an entry for it.
+`ip` is the machine's IPv4 address, where the magic packet is sent. After a successful
+wake the bot replies with `ssh -p220<last octet of ip> <username>@<MAZZACUNIJO_SSH_HOST>`.
 
 ```sh
-MAZZACUNIJO_MACHINES='[{"name": "nas", "mac": "aa:bb:cc:dd:ee:ff", "ip": "192.168.1.255"}]'
+MAZZACUNIJO_MACHINES='[{"name": "nas", "mac": "aa:bb:cc:dd:ee:ff", "ip": "192.168.1.40", "username": "admin"}]'
 ```
 
 ## Running

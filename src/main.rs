@@ -1,4 +1,4 @@
-use std::{net::IpAddr, sync::Arc};
+use std::{net::Ipv4Addr, sync::Arc};
 
 use anyhow::Context;
 use serde::Deserialize;
@@ -18,6 +18,7 @@ const CAPTION: &str = "<b>Wake-on-LAN</b>\nChoose a machine to power on.";
 struct Config {
     bot_token: String,
     allowed_ids: Vec<UserId>,
+    ssh_host: String,
     #[serde_as(as = "JsonString")]
     machines: Vec<Machine>,
 }
@@ -28,7 +29,8 @@ struct Machine {
     name: String,
     #[serde_as(as = "DisplayFromStr")]
     mac: MacAddr,
-    ip: IpAddr,
+    ip: Ipv4Addr,
+    username: String,
 }
 
 #[derive(BotCommands, Clone)]
@@ -113,20 +115,34 @@ async fn wake(bot: Bot, q: CallbackQuery, config: Arc<Config>) -> anyhow::Result
         .machines
         .iter()
         .find(|m| q.data.as_ref() == Some(&m.name));
-    let text = match machine {
-        Some(m) => match wol::send_wol(m.mac, Some(m.ip), None) {
-            Ok(()) => {
-                info!("{} woke {} ({})", q.from.id, m.name, m.ip);
-                format!("Magic packet sent to {}", m.name)
-            }
-            Err(e) => {
-                warn!("{} failed to wake {}: {e}", q.from.id, m.name);
-                format!("Failed to wake {}: {e}", m.name)
-            }
-        },
-        None => "Unknown machine, send /start again".to_owned(),
+    let Some(m) = machine else {
+        bot.answer_callback_query(q.id)
+            .text("Unknown machine, send /start again")
+            .await?;
+        return Ok(());
     };
-    bot.answer_callback_query(q.id).text(text).await?;
+
+    if let Err(e) = wol::send_wol(m.mac, Some(m.ip.into()), None) {
+        warn!("{} failed to wake {}: {e}", q.from.id, m.name);
+        bot.answer_callback_query(q.id)
+            .text(format!("Failed to wake {}: {e}", m.name))
+            .await?;
+        return Ok(());
+    }
+
+    info!("{} woke {} ({})", q.from.id, m.name, m.ip);
+    bot.answer_callback_query(q.id)
+        .text(format!("Magic packet sent to {}", m.name))
+        .await?;
+    let ssh = format!(
+        "ssh -p220{} {}@{}",
+        m.ip.octets()[3],
+        m.username,
+        config.ssh_host
+    );
+    bot.send_message(q.from.id, format!("<code>{ssh}</code>"))
+        .parse_mode(ParseMode::Html)
+        .await?;
     Ok(())
 }
 

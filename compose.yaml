@@ -7,8 +7,9 @@ services:
     environment:
       MAZZACUNIJO_BOT_TOKEN: ${MAZZACUNIJO_BOT_TOKEN}
       MAZZACUNIJO_ALLOWED_IDS: 123456789,987654321
+      MAZZACUNIJO_SSH_HOST: example.org
       MAZZACUNIJO_MACHINES: >-
         [
-          {"name": "workstation", "mac": "aa:bb:cc:dd:ee:01", "ip": "192.168.1.255"},
-          {"name": "nas", "mac": "aa:bb:cc:dd:ee:02", "ip": "192.168.1.255"}
+          {"name": "workstation", "mac": "aa:bb:cc:dd:ee:01", "ip": "192.168.1.10", "username": "user"},
+          {"name": "nas", "mac": "aa:bb:cc:dd:ee:02", "ip": "192.168.1.20", "username": "admin"}
         ]
